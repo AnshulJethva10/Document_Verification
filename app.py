@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from urllib.parse import urlparse
 import requests
+import datetime
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -273,6 +274,11 @@ def logout():
     session.clear()
     flash('You have been logged out.')
     return redirect(url_for('index'))
+
+@app.template_filter('datetime')
+def format_datetime(value):
+    return value.strftime("%Y-%m-%d %H:%M:%S")
+
 
 @app.route('/dashboard')
 def dashboard():
