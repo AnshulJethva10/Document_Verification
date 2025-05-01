@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Document - BlockVerify{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="fw-bold"><i class="fas fa-file-medical text-primary me-2"></i> Issue New Document</h1>
+            <p class="lead">Upload a document and assign it to a user for blockchain verification</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="POST" action="/issue_document" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="recipient" class="form-label">Recipient</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-user text-muted"></i>
+                                </span>
+                                <select class="form-select border-start-0" id="recipient" name="recipient" required>
+                                    <option value="">Select User</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.username }}">{{ user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-text">Select the user who will receive this document</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="document" class="form-label">Document</label>
+                            <div class="upload-area mb-3" id="uploadArea">
+                                <i class="fas fa-file-upload upload-icon"></i>
+                                <h3 class="h5 mb-3">Drag and drop your document or click to browse</h3>
+                                <p class="text-muted mb-3">Allowed formats: PDF, DOC, DOCX, PNG, JPG, JPEG</p>
+                                <input type="file" class="form-control d-none" id="document" name="document" required>
+                                <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                                    <i class="fas fa-folder-open me-2"></i> Browse Files
+                                </button>
+                            </div>
+                            
+                            <div id="fileSelected" class="alert alert-success d-none">
+                                <i class="fas fa-file-alt me-2"></i> <span id="fileName">No file selected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-upload me-2"></i> Issue Document
+                            </button>
+                            <a href="/dashboard" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-3"><i class="fas fa-info-circle text-primary me-2"></i> About Issuing Documents</h3>
+                    <ul class="mb-0">
+                        <li class="mb-2">When you issue a document, its hash is recorded on the blockchain</li>
+                        <li class="mb-2">The document is securely linked to the recipient's account</li>
+                        <li class="mb-2">Anyone with the original document can verify its authenticity</li>
+                        <li>Once issued, the document's integrity is protected by blockchain</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-3"><i class="fas fa-shield-alt text-primary me-2"></i> Security Note</h3>
+                    <p class="mb-0">Documents issued via this platform are tamper-proof. Make sure the document is free of errors before issuance, as its hash will be permanently recorded on the blockchain.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('document');
+        const browseBtn = document.getElementById('browseBtn');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('fileName');
+        
+        // Click events
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        browseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        
+        // File selection
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileName.textContent = this.files[0].name;
+                fileSelected.classList.remove('d-none');
+                uploadArea.classList.add('border-success');
+            }
+        });
+        
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            uploadArea.classList.add('border-primary');
+        }
+
+        function unhighlight() {
+            uploadArea.classList.remove('border-primary');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileName.textContent = files[0].name;
+                fileSelected.classList.remove('d-none');
+                uploadArea.classList.add('border-success');
+            }
+        }
+    });
+</script>
+{% endblock %}

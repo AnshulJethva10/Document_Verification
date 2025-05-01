@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Document - BlockVerify{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="fw-bold"><i class="fas fa-edit text-primary me-2"></i> Update Document</h1>
+            <p class="lead">Replace the existing document with a new version</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h3 class="h5 mb-0">Current Document Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 30%;">
+                                        <i class="fas fa-file-alt text-primary me-2"></i> Document Name:
+                                    </th>
+                                    <td>{{ document.filename }}</td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <i class="fas fa-user text-primary me-2"></i> Recipient:
+                                    </th>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <i class="fas fa-calendar-alt text-primary me-2"></i> Issue Date:
+                                    </th>
+                                    <td>{{ document.timestamp|datetime }}</td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <i class="fas fa-cube text-primary me-2"></i> Block #:
+                                    </th>
+                                    <td>
+                                        <span class="badge bg-primary">{{ document.block_index }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <i class="fas fa-fingerprint text-primary me-2"></i> File Hash:
+                                    </th>
+                                    <td>
+                                        <span class="badge bg-dark text-monospace">{{ document.file_hash }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-white">
+                    <h3 class="h5 mb-0">Upload New Version</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/document/{{ document._id }}/update" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <div class="upload-area mb-3" id="uploadArea">
+                                <i class="fas fa-file-upload upload-icon"></i>
+                                <h3 class="h5 mb-3">Drag and drop your updated document or click to browse</h3>
+                                <p class="text-muted mb-3">Allowed formats: PDF, DOC, DOCX, PNG, JPG, JPEG</p>
+                                <input type="file" class="form-control d-none" id="document" name="document" required>
+                                <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                                    <i class="fas fa-folder-open me-2"></i> Browse Files
+                                </button>
+                            </div>
+                            
+                            <div id="fileSelected" class="alert alert-success d-none">
+                                <i class="fas fa-file-alt me-2"></i> <span id="fileName">No file selected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Update Document
+                            </button>
+                            <a href="/dashboard" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-3"><i class="fas fa-info-circle text-primary me-2"></i> About Document Updates</h3>
+                    <p>When you update a document:</p>
+                    <ul class="mb-0">
+                        <li class="mb-2">A new hash is calculated for the updated document</li>
+                        <li class="mb-2">A new blockchain transaction is created</li>
+                        <li class="mb-2">Both versions will remain verifiable</li>
+                        <li>The update history is stored on the blockchain</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-4 bg-warning bg-opacity-10">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-3"><i class="fas fa-exclamation-triangle text-warning me-2"></i> Important Note</h3>
+                    <p class="mb-0">Updates are permanent and will create a new blockchain entry. The original document will remain in the blockchain's history.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('document');
+        const browseBtn = document.getElementById('browseBtn');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('fileName');
+        
+        // Click events
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        browseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        
+        // File selection
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileName.textContent = this.files[0].name;
+                fileSelected.classList.remove('d-none');
+                uploadArea.classList.add('border-success');
+            }
+        });
+        
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            uploadArea.classList.add('border-primary');
+        }
+
+        function unhighlight() {
+            uploadArea.classList.remove('border-primary');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileName.textContent = files[0].name;
+                fileSelected.classList.remove('d-none');
+                uploadArea.classList.add('border-success');
+            }
+        }
+    });
+</script>
+{% endblock %}
